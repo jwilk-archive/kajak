@@ -134,10 +134,11 @@ def do_export(options):
 
 def do_edit(options):
     # FIXME TODO
-    ipc.check_call([
-        'sensible-editor',
-        options.storage.path
-    ])
+    with storage(options, save=False) as this:
+        ipc.check_call([
+            'sensible-editor',
+            this.path
+        ])
 
 def main():
     parser = ArgumentParser()
