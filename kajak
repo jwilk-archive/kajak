@@ -32,39 +32,68 @@ from kajak import utils
 class ArgumentParser(argparse.ArgumentParser):
 
     def __init__(self):
-        def tp_date(s):
-            return chrono.parse_date(s)
-        tp_date.__name__ = 'date'
-        def tp_range(s):
-            return chrono.parse_range(s)
-        tp_range.__name__ = 'date range'
         argparse.ArgumentParser.__init__(self)
         self.__subparsers = self.add_subparsers(
-            parser_class=argparse.ArgumentParser
+            parser_class=CommandParser
         )
-        default_range = (chrono.distant_past, chrono.today)
         action = self.add_action('show')
-        action.add_argument('range', metavar='<date-range>', type=tp_range, nargs='?', default=default_range)
+        action.add_argument('range', nargs='?')
         action = self.add_action('push')
         action.add_argument('text')
-        action.add_argument('date', metavar='<date>', type=tp_date, nargs='?', default=chrono.today)
+        action.add_argument('date', nargs='?')
         action = self.add_action('pop')
         action.add_argument('-m', '--multi', action='store_true', help='allow popping more than one item at once')
-        action.add_argument('text', metavar='<text>')
-        action.add_argument('range', metavar='<date-range>', type=tp_range, nargs='?', default=default_range)
+        action.add_argument('text')
+        action.add_argument('range', nargs='?')
         action = self.add_action('reschedule')
-        action.add_argument('text', metavar='<text>')
-        action.add_argument('range', metavar='<date-range>', type=tp_range, nargs='?', default=default_range)
-        action.add_argument('date', metavar='<new-date>', type=tp_date)
+        action.add_argument('text')
+        action.add_argument('range', nargs='?')
+        action.add_argument('new_date')
         action = self.add_action('import')
         action = self.add_action('export')
         action = self.add_action('edit')
-        action.add_argument('range', metavar='<range>', type=tp_range, nargs='?', default=default_range)
+        action.add_argument('range', nargs='?')
 
     def add_action(self, name, **kwargs):
         parser = self.__subparsers.add_parser(name, **kwargs)
         parser.set_defaults(action=globals()['do_' + name])
         return parser
+
+def date_type(s):
+    return chrono.parse_date(s)
+date_type.__name__ = 'date'
+date_type.default = chrono.today
+
+def range_type(s):
+    return chrono.parse_range(s)
+range_type.__name__ = 'date range'
+range_type.default = (chrono.distant_past, chrono.today)
+
+class CommandParser(argparse.ArgumentParser):
+
+    def add_argument(self, *args, **kwargs):
+        type = None
+        try:
+            type = kwargs['type']
+        except LookupError:
+            if args[0].isalnum():
+                type_name = '{name}_type'.format(name=args[0])
+                try:
+                    type = globals()[type_name]
+                except LookupError:
+                    pass
+                else:
+                    kwargs['type'] = type
+        if ('metavar' not in kwargs) and (args[0][:1] != '-'):
+            metavar = args[0].replace('_', '-')
+            kwargs['metavar'] = '<{name}>'.format(name=metavar)
+        try:
+            default = type.default
+        except AttributeError:
+            pass
+        else:
+            kwargs.setdefault('default', default)
+        argparse.ArgumentParser.add_argument(self, *args, **kwargs)
 
 def prepare(options):
     path = os.path.join(
