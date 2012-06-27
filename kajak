@@ -26,6 +26,11 @@ import os
 import subprocess as ipc
 import sys
 
+try:
+    import jinja2
+except ImportError:
+    jinja2 = None
+
 from kajak import chrono
 from kajak import storage as storage_module
 from kajak import utils
@@ -108,9 +113,25 @@ def storage(options, save=True):
         result.save()
 
 def do_show(options):
+    template = None
+    if jinja2:
+        # TODO: documentation
+        template_paths = [
+            os.path.join(path, 'templates')
+            for path in utils.xdg.load_config_paths('kajak')
+        ]
+        template_loader = jinja2.FileSystemLoader(template_paths)
+        environment = jinja2.Environment(loader=template_loader)
+        try:
+            template = environment.get_template('default')
+        except jinja2.exceptions.TemplateNotFound:
+            pass
     with storage(options, save=False) as this:
-        for date, text in this.iter(options.range):
-            print(date, text)
+        if template is not None:
+            raise NotImplementedError
+        else:
+            for date, text in this.iter(options.range):
+                print(date, text)
 
 def do_push(options):
     with storage(options) as this:
