@@ -1,0 +1,7 @@
+{% for group in items|groupby('date') -%}
+{{ group.grouper }}
+==========
+{% for item in group.list -%}
+* {{ item.text }}
+{% endfor %}
+{% endfor %}

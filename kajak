@@ -128,7 +128,11 @@ def do_show(options):
             pass
     with storage(options, save=False) as this:
         if template is not None:
-            raise NotImplementedError
+            print(template.render(items=[
+                dict(date=date, text=text)
+                for date, text
+                in this.iter(options.range)
+            ]), end='')
         else:
             for date, text in this.iter(options.range):
                 print(date, text)
