@@ -1,0 +1,121 @@
+#!/usr/bin/python3
+
+# Copyright © 2012 Jakub Wilk <jwilk@jwilk.net>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the “Software”), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+import argparse
+import os
+import subprocess as ipc
+import sys
+
+from kajak import chrono
+from kajak import storage
+from kajak import utils
+
+class ArgumentParser(argparse.ArgumentParser):
+
+    def __init__(self):
+        def tp_date(s):
+            return chrono.parse_date(s)
+        tp_date.__name__ = 'date'
+        def tp_range(s):
+            return chrono.parse_range(s)
+        tp_range.__name__ = 'date range'
+        argparse.ArgumentParser.__init__(self)
+        self.__subparsers = self.add_subparsers(
+            parser_class=argparse.ArgumentParser
+        )
+        default_range = (chrono.distant_past, chrono.today)
+        action = self.add_action('show')
+        action.add_argument('range', metavar='<date-range>', type=tp_range, nargs='?', default=default_range)
+        action = self.add_action('push')
+        action.add_argument('text')
+        action.add_argument('date', metavar='<date>', type=tp_date, nargs='?', default=chrono.today)
+        action = self.add_action('pop')
+        action.add_argument('-m', '--multi', action='store_true', help='allow popping more than one item at once')
+        action.add_argument('text', metavar='<text>')
+        action.add_argument('range', metavar='<date-range>', type=tp_range, nargs='?', default=default_range)
+        action = self.add_action('reschedule')
+        action.add_argument('text', metavar='<text>')
+        action.add_argument('range', metavar='<date-range>', type=tp_range, nargs='?', default=default_range)
+        action.add_argument('date', metavar='<new-date>', type=tp_date)
+        action = self.add_action('import')
+        action = self.add_action('export')
+        action = self.add_action('edit')
+        action.add_argument('range', metavar='<range>', type=tp_range, nargs='?', default=default_range)
+
+    def add_action(self, name, **kwargs):
+        parser = self.__subparsers.add_parser(name, **kwargs)
+        parser.set_defaults(action=globals()['do_' + name])
+        return parser
+
+def prepare(options):
+    path = os.path.join(
+        utils.xdg.save_data_path('kajak'),
+        'storage.txt'
+    )
+    options.storage = storage.TextStorage(path=path)
+
+def do_show(options):
+    for date, text in options.storage.iter(options.range):
+        print(date, text)
+
+def do_push(options):
+    storage = options.storage
+    storage.push(options.date, options.text)
+    storage.save()
+
+def do_pop(options):
+    storage = options.storage
+    storage.pop(options.range, options.text, multi=options.multi)
+    storage.save()
+
+def do_reschedule(options):
+    # TODO
+    raise NotImplementedError('reschedule is not implemented yet')
+
+def do_import(options):
+    # TODO
+    raise NotImplementedError('import is not implemented yet')
+
+def do_export(options):
+    # TODO
+    raise NotImplementedError('export is not implemented yet')
+
+def do_edit(options):
+    # FIXME TODO
+    ipc.check_call([
+        'sensible-editor',
+        options.storage.path
+    ])
+
+def main():
+    parser = ArgumentParser()
+    if len(sys.argv) == 1:
+        # default command
+        sys.argv += ['show']
+    options = parser.parse_args()
+    prepare(options)
+    options.action(options)
+
+if __name__ == '__main__':
+    main()
+
+# vim:ts=4 sw=4 et
