@@ -21,12 +21,13 @@
 # SOFTWARE.
 
 import argparse
+import contextlib
 import os
 import subprocess as ipc
 import sys
 
 from kajak import chrono
-from kajak import storage
+from kajak import storage as storage_module
 from kajak import utils
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -95,27 +96,29 @@ class CommandParser(argparse.ArgumentParser):
             kwargs.setdefault('default', default)
         argparse.ArgumentParser.add_argument(self, *args, **kwargs)
 
-def load(options):
+@contextlib.contextmanager
+def storage(options, save=True):
     path = os.path.join(
         utils.xdg.save_data_path('kajak'),
         'storage.txt'
     )
-    return storage.TextStorage(path=path)
+    result = storage_module.TextStorage(path=path)
+    yield result
+    if save:
+        result.save()
 
 def do_show(options):
-    storage = load(options)
-    for date, text in storage.iter(options.range):
-        print(date, text)
+    with storage(options, save=False) as this:
+        for date, text in this.iter(options.range):
+            print(date, text)
 
 def do_push(options):
-    storage = load(options)
-    storage.push(options.date, options.text)
-    storage.save()
+    with storage(options) as this:
+        this.push(options.date, options.text)
 
 def do_pop(options):
-    storage = load(options)
-    storage.pop(options.range, options.text, multi=options.multi)
-    storage.save()
+    with storage(options) as this:
+        this.pop(options.range, options.text, multi=options.multi)
 
 def do_reschedule(options):
     # TODO
