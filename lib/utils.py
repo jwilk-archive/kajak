@@ -29,6 +29,12 @@ class xdg(object):
     if not os.path.isabs(xdg_config_home):
         xdg_config_home = os.path.join(os.path.expanduser('~'), '.config')
 
+    xdg_config_dirs = os.environ.get('XDG_CONFIG_DIRS') or '/etc/xdg'
+    xdg_config_dirs = (
+        [xdg_config_home] +
+        [path for path in xdg_config_dirs.split(os.path.pathsep) if os.path.abspath(path)]
+    )
+
     @classmethod
     def load_config_paths(xdg, resource):
         for config_dir in xdg.xdg_config_dirs:
