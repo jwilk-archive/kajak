@@ -26,6 +26,9 @@ import re
 class AmbiguousPop(LookupError):
     pass
 
+class AmbiguousReschedule(LookupError):
+    pass
+
 class Storage(object):
 
     def iter(self, date_range):
@@ -87,6 +90,25 @@ class TextStorage(Storage):
             ]
         else:
             raise AmbiguousPop(candidates)
+
+    def reschedule(self, date_range, text, new_date, multi=False):
+        candidates = frozenset(
+            (d, t)
+            for d, t in self.iter(date_range)
+            if t == text
+        )
+        if multi or len(candidates) == 1:
+            self.data = [
+                item
+                for item in self.data
+                if item not in candidates
+            ] + [
+                (new_date, text)
+                for date, text in candidates
+            ]
+            self.data.sort()
+        else:
+            raise AmbiguousReschedule(candidates)
 
     def __iter__(self):
         return iter(self.data)

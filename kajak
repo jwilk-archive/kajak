@@ -49,7 +49,7 @@ class ArgumentParser(argparse.ArgumentParser):
         action = self.add_action('reschedule')
         action.add_argument('text')
         action.add_argument('range', nargs='?')
-        action.add_argument('new_date')
+        action.add_argument('new_date', type=date_type)
         action = self.add_action('import')
         action = self.add_action('export')
         action = self.add_action('edit')
@@ -121,8 +121,8 @@ def do_pop(options):
         this.pop(options.range, options.text, multi=options.multi)
 
 def do_reschedule(options):
-    # TODO
-    raise NotImplementedError('reschedule is not implemented yet')
+    with storage(options) as this:
+        this.reschedule(options.range, options.text, options.new_date)
 
 def do_import(options):
     # TODO
