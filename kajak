@@ -95,24 +95,25 @@ class CommandParser(argparse.ArgumentParser):
             kwargs.setdefault('default', default)
         argparse.ArgumentParser.add_argument(self, *args, **kwargs)
 
-def prepare(options):
+def load(options):
     path = os.path.join(
         utils.xdg.save_data_path('kajak'),
         'storage.txt'
     )
-    options.storage = storage.TextStorage(path=path)
+    return storage.TextStorage(path=path)
 
 def do_show(options):
-    for date, text in options.storage.iter(options.range):
+    storage = load(options)
+    for date, text in storage.iter(options.range):
         print(date, text)
 
 def do_push(options):
-    storage = options.storage
+    storage = load(options)
     storage.push(options.date, options.text)
     storage.save()
 
 def do_pop(options):
-    storage = options.storage
+    storage = load(options)
     storage.pop(options.range, options.text, multi=options.multi)
     storage.save()
 
@@ -141,7 +142,6 @@ def main():
         # default command
         sys.argv += ['show']
     options = parser.parse_args()
-    prepare(options)
     options.action(options)
 
 if __name__ == '__main__':
