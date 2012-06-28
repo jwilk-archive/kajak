@@ -128,7 +128,7 @@ def do_show(options):
             pass
     with storage(options, save=False) as this:
         if template is not None:
-            print(template.render(items=[
+            print(template.render(today=chrono.today, items=[
                 dict(date=date, text=text)
                 for date, text
                 in this.iter(options.range)
