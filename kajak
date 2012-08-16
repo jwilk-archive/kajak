@@ -112,7 +112,13 @@ def storage(options, save=True):
     if save:
         result.save()
 
+def render_plain(items):
+    for date, text in items:
+        print(date, text)
+
 def render(items):
+    if not jinja2:
+        return render_plain(items)
     # TODO: documentation
     template_paths = [
         os.path.join(path, 'templates')
@@ -123,17 +129,12 @@ def render(items):
     try:
         template = environment.get_template('default')
     except jinja2.exceptions.TemplateNotFound:
-        pass
+        return render_plain(items)
     print(template.render(today=chrono.today, items=[
         dict(date=date, text=text)
         for date, text
         in items
     ]), end='')
-
-if not jinja2:
-    def render(items):
-        for date, text in items:
-            print(date, text)
 
 def do_show(options):
     with storage(options, save=False) as this:
