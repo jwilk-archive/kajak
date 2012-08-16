@@ -23,6 +23,7 @@
 import argparse
 import contextlib
 import os
+import re
 import subprocess as ipc
 import sys
 
@@ -55,6 +56,8 @@ class ArgumentParser(argparse.ArgumentParser):
         action.add_argument('text')
         action.add_argument('range', nargs='?')
         action.add_argument('new_date', type=date_type)
+        action = self.add_action('grep')
+        action.add_argument('regexp')
         action = self.add_action('import')
         action = self.add_action('export')
         action = self.add_action('edit')
@@ -151,6 +154,11 @@ def do_pop(options):
 def do_reschedule(options):
     with storage(options) as this:
         this.reschedule(options.range, options.text, options.new_date)
+
+def do_grep(options):
+    regexp = re.compile(options.regexp)
+    with storage(options) as this:
+        render(this.grep(regexp))
 
 def do_import(options):
     # TODO

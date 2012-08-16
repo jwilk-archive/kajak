@@ -40,6 +40,12 @@ class Storage(object):
                 break
             yield (date, text)
 
+    def grep(self, regexp):
+        match = regexp.search
+        for date, text in self:
+            if match(text):
+                yield (date, text)
+
 class TextStorage(Storage):
 
     parse_line = re.compile(r'(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})\s+(?P<text>.*)').match
