@@ -155,7 +155,7 @@ def do_reschedule(options):
 
 def do_grep(options):
     regexp = re.compile(options.regexp)
-    with storage(options) as this:
+    with storage(options, save=False) as this:
         render(this.grep(regexp))
 
 def do_import(options):
