@@ -29,6 +29,9 @@ class AmbiguousPop(LookupError):
 class AmbiguousReschedule(LookupError):
     pass
 
+class Duplicate(LookupError):
+    pass
+
 class Storage(object):
 
     def iter(self, date_range):
@@ -61,15 +64,14 @@ class TextStorage(Storage):
                 raise
         else:
             os.close(fd)
-        self.data = []
+        self.data = set()
         with open(path, 'r+t', encoding='UTF-8') as file:
             for line in file:
                 match = self.parse_line(line)
                 year, month, day, text = match.groups()
                 year, month, day = map(int, (year, month, day))
                 stamp = datetime.date(year, month, day)
-                self.data.append((stamp, text))
-        self.data.sort()
+                self.data.add((stamp, text))
 
     def push(self, date, text):
         if not isinstance(date, datetime.date):
@@ -78,9 +80,10 @@ class TextStorage(Storage):
             raise TypeError
         if text != text.strip():
             raise ValueError('leading/trailing space not allowed')
-        # TODO: check for duplicates
-        self.data += [(date, text)]
-        self.data.sort()
+        item = (date, text)
+        if item in self.data:
+            raise Duplicate((date, text))
+        self.data.add(item)
 
     def pop(self, date_range, text, multi=False):
         candidates = frozenset(
@@ -89,11 +92,7 @@ class TextStorage(Storage):
             if t == text
         )
         if multi or len(candidates) == 1:
-            self.data = [
-                item
-                for item in self.data
-                if item not in candidates
-            ]
+            self.data.difference_update(candidates)
         else:
             raise AmbiguousPop(candidates)
 
@@ -104,25 +103,21 @@ class TextStorage(Storage):
             if t == text
         )
         if multi or len(candidates) == 1:
-            self.data = [
-                item
-                for item in self.data
-                if item not in candidates
-            ] + [
+            self.data.difference_update(candidates)
+            self.data.update(
                 (new_date, text)
                 for date, text in candidates
-            ]
-            self.data.sort()
+            )
         else:
             raise AmbiguousReschedule(candidates)
 
     def __iter__(self):
-        return iter(self.data)
+        return iter(sorted(self.data))
 
     def save(self):
         tmppath = self.path + '.kajak-tmp'
         with open(tmppath, 'wt', encoding='UTF-8') as file:
-            for date, text in self.data:
+            for date, text in sorted(self.data):
                 print(date, text, file=file)
             os.fsync(file)
         os.rename(tmppath, self.path)
