@@ -23,6 +23,8 @@ import errno
 import os
 import re
 
+from . import chrono
+
 class MatchError(LookupError):
     pass
 
@@ -69,12 +71,7 @@ class TextStorage(Storage):
             os.close(fd)
         self.data = set()
         with open(path, 'r+t', encoding='UTF-8') as file:
-            for line in file:
-                match = self.parse_line(line)
-                year, month, day, text = match.groups()
-                year, month, day = map(int, (year, month, day))
-                stamp = datetime.date(year, month, day)
-                self.data.add((stamp, text))
+            self.import_(file)
 
     def push(self, date, text):
         if not isinstance(date, datetime.date):
@@ -121,11 +118,22 @@ class TextStorage(Storage):
     def __iter__(self):
         return iter(sorted(self.data))
 
+    def import_(self, file):
+        for line in file:
+            match = self.parse_line(line)
+            year, month, day, text = match.groups()
+            year, month, day = map(int, (year, month, day))
+            stamp = datetime.date(year, month, day)
+            self.data.add((stamp, text))
+
+    def export(self, date_range, file):
+        for date, text in self.iter(date_range):
+            print(date, text, file=file)
+
     def save(self):
         tmppath = self.path + '.kajak-tmp'
         with open(tmppath, 'wt', encoding='UTF-8') as file:
-            for date, text in sorted(self.data):
-                print(date, text, file=file)
+            self.export(chrono.everytime, file)
             os.fsync(file)
         os.rename(tmppath, self.path)
 

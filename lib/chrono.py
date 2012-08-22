@@ -38,6 +38,7 @@ def parse_date(s):
 
 distant_past = datetime.date(1, 1, 1)
 distant_future = datetime.date(9999, 1, 1)
+everytime = (distant_past, distant_future)
 today = datetime.date.today()
 
 split_range = re.compile('''
