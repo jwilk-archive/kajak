@@ -24,6 +24,7 @@ import os
 import re
 import subprocess as ipc
 import sys
+import tempfile
 
 try:
     import jinja2
@@ -186,12 +187,17 @@ def do_export(options):
     raise NotImplementedError('export is not implemented yet')
 
 def do_edit(options):
-    # FIXME TODO
-    with storage(options, save=False) as this:
-        ipc.check_call([
-            'sensible-editor',
-            this.path
-        ])
+    with storage(options, save=True) as this:
+        with tempfile.NamedTemporaryFile(prefix='kajak.export.', suffix='.txt', mode='w+t', encoding='UTF-8') as file:
+            this.export(options.range, file)
+            file.flush()
+            ipc.check_call([
+                'sensible-editor',
+                file.name
+            ])
+            file.seek(0)
+            this.clear(options.range)
+            this.import_(file)
 
 def main():
     parser = ArgumentParser()
