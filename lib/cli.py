@@ -113,7 +113,7 @@ def storage(options, save=True):
     if save:
         result.save()
 
-def render_plain(items):
+def render_plain(items, print=print):
     for date, text in items:
         print(date, text)
 
@@ -145,13 +145,32 @@ def do_push(options):
     with storage(options) as this:
         this.push(options.date, options.text)
 
+@contextlib.contextmanager
+def handle_match_errors(text):
+    try:
+        yield
+    except storage_module.NoMatches:
+        message = 'kajak: error: no matches for {text!r}'.format(text=text)
+        print(message, file=sys.stderr)
+        sys.exit(1)
+    except storage_module.MultipleMatches as exc:
+        message = 'kajak: error: multiple matches for {text!r}:'.format(text=text)
+        print(message, file=sys.stderr)
+        def custom_print(*args):
+            print('-', file=sys.stderr, end=' ')
+            print(*args, file=sys.stderr)
+        render_plain(exc.args[0], print=custom_print)
+        sys.exit(1)
+
 def do_pop(options):
     with storage(options) as this:
-        this.pop(options.range, options.text, multi=options.multi)
+        with handle_match_errors(options.text):
+            this.pop(options.range, options.text, multi=options.multi)
 
 def do_reschedule(options):
     with storage(options) as this:
-        this.reschedule(options.range, options.text, options.new_date)
+        with handle_match_errors(options.text):
+            this.reschedule(options.range, options.text, options.new_date)
 
 def do_grep(options):
     regexp = re.compile(options.regexp)

@@ -23,10 +23,13 @@ import errno
 import os
 import re
 
-class AmbiguousPop(LookupError):
+class MatchError(LookupError):
     pass
 
-class AmbiguousReschedule(LookupError):
+class NoMatches(MatchError):
+    pass
+
+class MultipleMatches(MatchError):
     pass
 
 class Duplicate(LookupError):
@@ -93,8 +96,10 @@ class TextStorage(Storage):
         )
         if multi or len(candidates) == 1:
             self.data.difference_update(candidates)
+        elif len(candidates) == 0:
+            raise NoMatches
         else:
-            raise AmbiguousPop(candidates)
+            raise MultipleMatches(candidates)
 
     def reschedule(self, date_range, text, new_date, multi=False):
         candidates = frozenset(
@@ -108,8 +113,10 @@ class TextStorage(Storage):
                 (new_date, text)
                 for date, text in candidates
             )
+        elif len(candidates) == 0:
+            raise NoMatches
         else:
-            raise AmbiguousReschedule(candidates)
+            raise MultipleMatches(candidates)
 
     def __iter__(self):
         return iter(sorted(self.data))
