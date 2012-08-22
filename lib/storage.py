@@ -118,6 +118,13 @@ class TextStorage(Storage):
     def __iter__(self):
         return iter(sorted(self.data))
 
+    def clear(self, date_range):
+        candidates = frozenset(
+            (d, t)
+            for d, t in self.iter(date_range)
+        )
+        self.data.difference_update(candidates)
+
     def import_(self, file):
         for line in file:
             match = self.parse_line(line)
