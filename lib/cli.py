@@ -107,7 +107,8 @@ class CommandParser(argparse.ArgumentParser):
         argparse.ArgumentParser.add_argument(self, *args, **kwargs)
 
 @contextlib.contextmanager
-def storage(options, save=True):
+def storage(options, *, save=None):
+    assert save is not None
     path = os.path.join(
         utils.xdg.save_data_path('kajak'),
         'storage.txt'
@@ -146,7 +147,7 @@ def do_show(options):
         render(this.iter(options.range))
 
 def do_push(options):
-    with storage(options) as this:
+    with storage(options, save=True) as this:
         this.push(options.date, options.text)
 
 @contextlib.contextmanager
@@ -167,12 +168,12 @@ def handle_match_errors(text):
         sys.exit(1)
 
 def do_pop(options):
-    with storage(options) as this:
+    with storage(options, save=True) as this:
         with handle_match_errors(options.text):
             this.pop(options.range, options.text, multi=options.multi)
 
 def do_reschedule(options):
-    with storage(options) as this:
+    with storage(options, save=True) as this:
         with handle_match_errors(options.text):
             this.reschedule(options.range, options.text, options.new_date)
 
