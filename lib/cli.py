@@ -59,6 +59,7 @@ class ArgumentParser(argparse.ArgumentParser):
         action = self.add_action('grep')
         action.add_argument('regexp')
         action = self.add_action('import')
+        action.add_argument('--replace', action='store_true')
         action = self.add_action('export')
         action.add_argument('range', nargs='?', default=chrono.everytime)
         action = self.add_action('edit')
@@ -181,8 +182,11 @@ def do_grep(options):
         render(this.grep(regexp))
 
 def do_import(options):
-    # TODO
-    raise NotImplementedError('import is not implemented yet')
+    stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='UTF-8')
+    with storage(options, save=True) as this:
+        if options.replace:
+            this.clear(chrono.everytime)
+        this.import_(stdin)
 
 def do_export(options):
     stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='UTF-8')
