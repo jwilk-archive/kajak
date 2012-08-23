@@ -118,7 +118,7 @@ def storage(options, *, save=None):
     if save:
         result.save()
 
-def render_plain(items, print=print):
+def render_plain(items, *, print=print):
     for date, text in items:
         print(date, text)
 
