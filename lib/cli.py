@@ -20,6 +20,7 @@
 
 import argparse
 import contextlib
+import io
 import os
 import re
 import subprocess as ipc
@@ -59,6 +60,7 @@ class ArgumentParser(argparse.ArgumentParser):
         action.add_argument('regexp')
         action = self.add_action('import')
         action = self.add_action('export')
+        action.add_argument('range', nargs='?', default=chrono.everytime)
         action = self.add_action('edit')
         action.add_argument('range', nargs='?')
 
@@ -183,8 +185,9 @@ def do_import(options):
     raise NotImplementedError('import is not implemented yet')
 
 def do_export(options):
-    # TODO
-    raise NotImplementedError('export is not implemented yet')
+    stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='UTF-8')
+    with storage(options, save=False) as this:
+        this.export(options.range, stdout)
 
 def do_edit(options):
     with storage(options, save=True) as this:
