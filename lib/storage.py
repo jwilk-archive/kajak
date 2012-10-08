@@ -57,6 +57,9 @@ class Storage(object):
             if match(event.text)
         )
 
+class TextStorageSyntaxError(SyntaxError):
+    pass
+
 class TextStorage(Storage):
 
     parse_line = re.compile(r'(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})\s+(?P<text>.*)').match
@@ -117,8 +120,10 @@ class TextStorage(Storage):
         self.data.difference_update(candidates)
 
     def import_(self, file):
-        for line in file:
+        for n, line in enumerate(file):
             match = self.parse_line(line)
+            if match is None:
+                raise TextStorageSyntaxError('cannot parse {name}:{n}: {line!r}'.format(name=file.name, n=n, line=line))
             year, month, day, text = match.groups()
             year, month, day = map(int, (year, month, day))
             stamp = datetime.date(year, month, day)
