@@ -24,6 +24,7 @@ import os
 import re
 
 from . import chrono
+from .event import Event
 
 class MatchError(LookupError):
     pass
@@ -41,18 +42,20 @@ class Storage(object):
 
     def iter(self, date_range):
         (ldate, rdate) = date_range
-        for date, text in self:
-            if date < ldate:
+        for event in self:
+            if event.date < ldate:
                 continue
-            if date > rdate:
+            if event.date > rdate:
                 break
-            yield (date, text)
+            yield event
 
     def grep(self, regexp):
         match = regexp.search
-        for date, text in self:
-            if match(text):
-                yield (date, text)
+        return (
+            event
+            for event in self
+            if match(event.text)
+        )
 
 class TextStorage(Storage):
 
@@ -74,22 +77,16 @@ class TextStorage(Storage):
             self.import_(file)
 
     def push(self, date, text):
-        if not isinstance(date, datetime.date):
-            raise TypeError
-        if not isinstance(text, str):
-            raise TypeError
-        if text != text.strip():
-            raise ValueError('leading/trailing space not allowed')
-        item = (date, text)
-        if item in self.data:
-            raise Duplicate((date, text))
-        self.data.add(item)
+        event = Event(date, text)
+        if event in self.data:
+            raise Duplicate(event)
+        self.data.add(event)
 
     def pop(self, date_range, text, multi=False):
         candidates = frozenset(
-            (d, t)
-            for d, t in self.iter(date_range)
-            if t == text
+            event
+            for event in self.iter(date_range)
+            if event.text == text
         )
         if multi or len(candidates) == 1:
             self.data.difference_update(candidates)
@@ -100,16 +97,13 @@ class TextStorage(Storage):
 
     def reschedule(self, date_range, text, new_date, multi=False):
         candidates = frozenset(
-            (d, t)
-            for d, t in self.iter(date_range)
-            if t == text
+            event
+            for event in self.iter(date_range)
+            if event.text == text
         )
         if multi or len(candidates) == 1:
-            self.data.difference_update(candidates)
-            self.data.update(
-                (new_date, text)
-                for date, text in candidates
-            )
+            for event in candidates:
+                event.date = new_date
         elif len(candidates) == 0:
             raise NoMatches
         else:
@@ -119,10 +113,7 @@ class TextStorage(Storage):
         return iter(sorted(self.data))
 
     def clear(self, date_range):
-        candidates = frozenset(
-            (d, t)
-            for d, t in self.iter(date_range)
-        )
+        candidates = frozenset(self.iter(date_range))
         self.data.difference_update(candidates)
 
     def import_(self, file):
@@ -131,11 +122,12 @@ class TextStorage(Storage):
             year, month, day, text = match.groups()
             year, month, day = map(int, (year, month, day))
             stamp = datetime.date(year, month, day)
-            self.data.add((stamp, text))
+            event = Event(stamp, text)
+            self.data.add(event)
 
     def export(self, date_range, file):
-        for date, text in self.iter(date_range):
-            print(date, text, file=file)
+        for event in self.iter(date_range):
+            print(event.date, event.text, file=file)
 
     def save(self):
         tmppath = self.path + '.kajak-tmp'

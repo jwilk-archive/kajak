@@ -119,8 +119,8 @@ def storage(options, *, save=None):
         result.save()
 
 def render_plain(items, *, print=print):
-    for date, text in items:
-        print(date, text)
+    for event in items:
+        print(event.date, event.text)
 
 def render(items):
     if not jinja2:
@@ -136,11 +136,8 @@ def render(items):
         template = environment.get_template('default')
     except jinja2.exceptions.TemplateNotFound:
         return render_plain(items)
-    print(template.render(today=chrono.today, items=[
-        dict(date=date, text=text)
-        for date, text
-        in items
-    ]), end='')
+    items = list(items)
+    print(template.render(today=chrono.today, items=items), end='')
 
 def do_show(options):
     with storage(options, save=False) as this:
