@@ -120,7 +120,7 @@ class TextStorage(Storage):
         self.data.difference_update(candidates)
 
     def import_(self, file):
-        for n, line in enumerate(file):
+        for n, line in enumerate(file, 1):
             match = self.parse_line(line)
             if match is None:
                 raise TextStorageSyntaxError('cannot parse {name}:{n}: {line!r}'.format(name=file.name, n=n, line=line))
