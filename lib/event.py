@@ -21,15 +21,22 @@
 import datetime
 import functools
 
+def _check_string(s):
+    if not isinstance(s, str):
+        raise TypeError
+    if not s:
+        raise ValueError('empty strings not allowed')
+    if s != s.strip():
+        raise ValueError('leading/trailing space not allowed')
+    if '\r' in s or '\n' in s:
+        raise ValueError('newlines not allowed')
+
 class Event(object):
 
     def __init__(self, date, text):
         if not isinstance(date, datetime.date):
             raise TypeError
-        if not isinstance(text, str):
-            raise TypeError
-        if text != text.strip():
-            raise ValueError('leading/trailing space not allowed')
+        _check_string(text)
         self.date = date
         self.text = text
 
