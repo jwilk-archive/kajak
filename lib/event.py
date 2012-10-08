@@ -20,18 +20,57 @@
 
 import datetime
 import functools
+import warnings
+
+class EventWarning(UserWarning):
+    pass
+
+_extra_setters = {}
+
+def extra(s):
+    def nested(f):
+        _extra_setters[s] = f
+        return f
+    return nested
+
+def _check_string(s):
+    if not isinstance(s, str):
+        raise TypeError
+    if not s:
+        raise ValueError('empty strings not allowed')
+    if s != s.strip():
+        raise ValueError('leading/trailing space not allowed')
+    if '\r' in s or '\n' in s:
+        raise ValueError('newlines not allowed')
 
 class Event(object):
 
-    def __init__(self, date, text):
+    def __init__(self, date, text, *, extra=()):
         if not isinstance(date, datetime.date):
             raise TypeError
-        if not isinstance(text, str):
-            raise TypeError
-        if text != text.strip():
-            raise ValueError('leading/trailing space not allowed')
+        _check_string(text)
         self.date = date
         self.text = text
+        self.extra = list(extra)
+        self._reschedule_hint = None
+        for key, value in self.extra:
+            _check_string(key)
+            _check_string(value)
+            try:
+                setter = _extra_setters[key]
+            except LookupError:
+                warnings.warn('unknown attribute {0!r}'.format(key), category=EventWarning, stacklevel=2)
+                continue
+            setter(self, value)
+
+    @extra('reschedule-hint')
+    def set_reschedule_hint(self, value):
+        self._reschedule_hint = value
+
+    def get_reschedule_hint(self):
+        if self._reschedule_hint is None:
+            raise LookupError
+        return self._reschedule_hint
 
     def _as_tuple(self):
         return (self.date, self.text)

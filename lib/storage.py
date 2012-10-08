@@ -62,7 +62,10 @@ class TextStorageSyntaxError(SyntaxError):
 
 class TextStorage(Storage):
 
-    parse_line = re.compile(r'(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})\s+(?P<text>.*)').match
+    parse_line = re.compile(r'''
+        (?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})\s+(?P<text>.*)
+    |   [+]\s+(?P<ekey>[a-z0-9-]+)\s+(?P<evalue>.*)
+    ''', re.VERBOSE).match
 
     def __init__(self, path):
         self.path = path
@@ -120,19 +123,36 @@ class TextStorage(Storage):
         self.data.difference_update(candidates)
 
     def import_(self, file):
+        event_data = None
+        extra = []
+        def parse_error():
+            raise TextStorageSyntaxError('cannot parse {name}:{n}: {line!r}'.format(name=file.name, n=n, line=line))
+        def finally_add():
+            if event_data is not None:
+                event = Event(*event_data, extra=extra)
+                self.data.add(event)
         for n, line in enumerate(file):
             match = self.parse_line(line)
             if match is None:
-                raise TextStorageSyntaxError('cannot parse {name}:{n}: {line!r}'.format(name=file.name, n=n, line=line))
-            year, month, day, text = match.groups()
-            year, month, day = map(int, (year, month, day))
-            stamp = datetime.date(year, month, day)
-            event = Event(stamp, text)
-            self.data.add(event)
+                parse_error()
+            year, month, day, text, ekey, evalue = match.groups()
+            if text is not None:
+                finally_add()
+                year, month, day = map(int, (year, month, day))
+                stamp = datetime.date(year, month, day)
+                event_data = (stamp, text)
+                extra = []
+            else:
+                if event_data is None:
+                    parse_error()
+                extra += [(ekey, evalue)]
+        finally_add()
 
     def export(self, date_range, file):
         for event in self.iter(date_range):
             print(event.date, event.text, file=file)
+            for ekey, evalue in event.extra:
+                print('+', ekey, evalue, file=file)
 
     def save(self):
         tmppath = self.path + '.kajak-tmp'
