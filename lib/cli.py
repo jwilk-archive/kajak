@@ -145,7 +145,11 @@ def do_show(options):
 
 def do_push(options):
     with storage(options, save=True) as this:
-        this.push(options.date, options.text)
+        try:
+            this.push(options.date, options.text)
+        except storage_module.Duplicate as exc:
+            message = 'kajak: error: duplicate {exc}'.format(exc=exc)
+            print(message, file=sys.stderr)
 
 @contextlib.contextmanager
 def handle_match_errors(text):
