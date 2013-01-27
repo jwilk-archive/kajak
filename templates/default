@@ -1,10 +1,10 @@
-{% for group in items|groupby('date') -%}
+{% for group in tasks|groupby('date') -%}
 {%- set header = group.grouper | string -%}
 {%- if group.grouper < today %}{% set header = header + " (overdue)" %}{% endif -%}
 {%- if group.grouper == today %}{% set header = header + " (today)" %}{% endif -%}
 {{ header }}
 {{ (header | length) * "=" }}
-{% for item in group.list -%}
-* {{ item.text }}
+{% for task in group.list -%}
+* {{ task.text }}
 {% endfor %}
 {% endfor %}

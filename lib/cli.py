@@ -49,7 +49,7 @@ class ArgumentParser(argparse.ArgumentParser):
         action.add_argument('text')
         action.add_argument('date', nargs='?')
         action = self.add_action('pop', aliases=['del', 'delete'])
-        action.add_argument('-m', '--multi', action='store_true', help='allow popping more than one item at once')
+        action.add_argument('-m', '--multi', action='store_true', help='allow popping more than one task at once')
         action.add_argument('text')
         action.add_argument('range', nargs='?')
         action = self.add_action('reschedule', aliases=['move'])
@@ -118,13 +118,13 @@ def storage(options, *, save=None):
     if save:
         result.save()
 
-def render_plain(items, *, print=print):
-    for event in items:
+def render_plain(tasks, *, print=print):
+    for event in tasks:
         print(event.date, event.text)
 
-def render(items):
+def render(tasks):
     if not jinja2:
-        return render_plain(items)
+        return render_plain(tasks)
     # TODO: documentation
     template_paths = [
         os.path.join(path, 'templates')
@@ -135,9 +135,9 @@ def render(items):
     try:
         template = environment.get_template('default')
     except jinja2.exceptions.TemplateNotFound:
-        return render_plain(items)
-    items = list(items)
-    print(template.render(today=chrono.today, items=items), end='')
+        return render_plain(tasks)
+    tasks = list(tasks)
+    print(template.render(today=chrono.today, tasks=tasks), end='')
 
 def do_show(options):
     with storage(options, save=False) as this:
