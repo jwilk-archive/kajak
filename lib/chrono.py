@@ -41,7 +41,7 @@ distant_future = datetime.date(9999, 1, 1)
 everytime = (distant_past, distant_future)
 today = datetime.date.today()
 
-split_range = re.compile('''
+split_range = re.compile(r'''
 ( \s*<\s*(?P<r1>.*)
 | \s*>\s*(?P<l1>.*)
 | \s*(<?P<l0>.*\S)\s+to\s+(?P<r0>.*)
