@@ -65,4 +65,4 @@ def parse_range(s):
                 rdate = parse_date(v)
     return (ldate, rdate)
 
-# vim:ts=4 sw=4 et
+# vim:ts=4 sts=4 sw=4 et

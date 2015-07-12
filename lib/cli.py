@@ -216,4 +216,4 @@ def main():
     options = parser.parse_args()
     options.action(options)
 
-# vim:ts=4 sw=4 et
+# vim:ts=4 sts=4 sw=4 et

@@ -5,4 +5,4 @@ import kajak.cli
 if __name__ == '__main__':
     kajak.cli.main()
 
-# vim:ts=4 sw=4 et
+# vim:ts=4 sts=4 sw=4 et
