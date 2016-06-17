@@ -35,6 +35,7 @@ def parse_date(s):
     stdout, stderr = child.communicate()
     if stderr:
         stderr = stderr.decode('ASCII')
+        stderr = stderr.strip()
         raise ValueError('cannot parse date: {0}'.format(stderr))
     stdout = stdout.decode('ASCII')
     y, m, d = map(int, stdout.strip().split('-'))
