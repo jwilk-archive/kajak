@@ -19,15 +19,19 @@
 # SOFTWARE.
 
 import datetime
+import os
 import re
 import subprocess as ipc
+
+def _set_c_locale():
+    os.environ['LC_ALL'] = 'C'
 
 def parse_date(s):
     if s == 'today':
         # shortcut:
         return datetime.date.today()
     args = ['date', '--rfc-3339=date', '--date={}'.format(s)]
-    child = ipc.Popen(args, stdout=ipc.PIPE, stderr=ipc.PIPE)
+    child = ipc.Popen(args, stdout=ipc.PIPE, stderr=ipc.PIPE, preexec_fn=_set_c_locale)
     stdout, stderr = child.communicate()
     if stderr:
         stderr = stderr.decode('ASCII')
