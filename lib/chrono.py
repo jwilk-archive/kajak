@@ -18,9 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import datetime
 import re
 import subprocess as ipc
-import datetime
 
 def parse_date(s):
     if s == 'today':
