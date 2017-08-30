@@ -32,9 +32,9 @@ try:
 except ImportError:
     jinja2 = None
 
-from kajak import chrono
-from kajak import storage as storage_module
-from kajak import utils
+from . import chrono
+from . import storage as storage_module
+from . import utils
 
 class ArgumentParser(argparse.ArgumentParser):
 
